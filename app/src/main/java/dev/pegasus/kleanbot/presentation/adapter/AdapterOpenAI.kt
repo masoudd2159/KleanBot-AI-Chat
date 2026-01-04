@@ -10,6 +10,10 @@ import dev.pegasus.kleanbot.databinding.ItemHomeLeftBinding
 import dev.pegasus.kleanbot.databinding.ItemHomeRightBinding
 import dev.pegasus.kleanbot.presentation.enums.OpenAIRole
 import dev.pegasus.kleanbot.utilities.TypeWriter
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
+import io.noties.markwon.ext.tasklist.TaskListPlugin
 
 /**
  * Created by: Sohaib Ahmed
@@ -22,9 +26,18 @@ import dev.pegasus.kleanbot.utilities.TypeWriter
 
 class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
 
+    private var markwon: Markwon? = null
+
     private val typedContentList = arrayListOf<String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        if (markwon == null) {
+            markwon = Markwon.builder(parent.context)
+                .usePlugin(TablePlugin.create(parent.context))
+                .usePlugin(StrikethroughPlugin.create())
+                .usePlugin(TaskListPlugin.create(parent.context))
+                .build()
+        }
         val layoutInflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             1 -> CustomViewHolderUser(ItemHomeRightBinding.inflate(layoutInflater, parent, false))
@@ -46,12 +59,13 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
     }
 
     private fun ItemHomeLeftBinding.bindViews(message: Message) {
+        val markdown = markwon?.toMarkdown(message.content) ?: message.content
         typedContentList.find { it == message.content }?.let {
-            mtvLeftTextItemHomeLeft.text = message.content
+            mtvLeftTextItemHomeLeft.text = markdown
         } ?: run {
             typedContentList.add(message.content)
             val typeWriter = TypeWriter(mtvLeftTextItemHomeLeft)
-            typeWriter.animateText(message.content, characterDelay = 20)
+            typeWriter.animateText(markdown, characterDelay = 20)
         }
     }
 

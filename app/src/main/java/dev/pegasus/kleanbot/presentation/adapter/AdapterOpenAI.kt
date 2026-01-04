@@ -12,8 +12,15 @@ import dev.pegasus.kleanbot.presentation.enums.OpenAIRole
 import dev.pegasus.kleanbot.utilities.TypeWriter
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TableBlock
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.ext.tasklist.TaskListPlugin
+import org.commonmark.node.Node
+import org.commonmark.node.Visitor
+import android.widget.LinearLayout
+import android.widget.HorizontalScrollView
+import com.google.android.material.textview.MaterialTextView
+import android.graphics.Color
 
 /**
  * Created by: Sohaib Ahmed
@@ -59,15 +66,125 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
     }
 
     private fun ItemHomeLeftBinding.bindViews(message: Message) {
-        val markdown = markwon?.toMarkdown(message.content) ?: message.content
-        typedContentList.find { it == message.content }?.let {
-            mtvLeftTextItemHomeLeft.text = markdown
-        } ?: run {
-            typedContentList.add(message.content)
-            val typeWriter = TypeWriter(mtvLeftTextItemHomeLeft)
-            typeWriter.animateText(markdown, characterDelay = 20)
+        llContainerItemHomeLeft.removeAllViews()
+        val node = markwon?.parse(message.content) ?: return
+
+        val blocks = ArrayList<Node>()
+        var currentBlockStart: Node? = null
+        var currentBlockEnd: Node? = null
+
+        val visitor = object : Visitor {
+             override fun visit(node: Node) {
+                if (node is TableBlock) {
+                    // Flush previous text block if exists
+                    if (currentBlockStart != null) {
+                         addTextBlock(currentBlockStart, node.previous)
+                         currentBlockStart = null
+                         currentBlockEnd = null
+                    }
+                    // Add table block
+                    addTableBlock(node)
+                } else {
+                    if (currentBlockStart == null) {
+                        currentBlockStart = node
+                    }
+                    currentBlockEnd = node
+                    // Visit children to find nested tables?
+                    // Markwon TableBlock is usually top-level block.
+                    // If we don't visit children, we might miss nested stuff, but flat list is safer for now.
+                }
+            }
+        }
+        
+        // Iterating top level nodes manually to avoid deep recursion issues or missing siblings
+        var child = node.firstChild
+        while (child != null) {
+            val next = child.next
+            if (child is TableBlock) {
+                if (currentBlockStart != null) {
+                    addTextBlock(currentBlockStart, child.previous)
+                    currentBlockStart = null
+                }
+                addTableBlock(child)
+            } else {
+                if (currentBlockStart == null) {
+                    currentBlockStart = child
+                }
+            }
+            child = next
+        }
+        if (currentBlockStart != null) {
+            addTextBlock(currentBlockStart, node.lastChild)
         }
     }
+
+    private fun ItemHomeLeftBinding.addTextBlock(startNode: Node?, endNode: Node?) {
+        if (startNode == null) return
+        val textView = MaterialTextView(root.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setTextColor(Color.BLACK)
+            textSize = 16f
+            setPadding(0, 0, 0, 0)
+        }
+        
+        // Render the range of nodes.
+        // Since we cannot easily render a range, we can render node by node and append?
+        // Or create a dummy node.
+        
+        val dummyNode = org.commonmark.node.Document()
+        var node = startNode
+        while (node != null) {
+            val next = node.next
+            // We need to clone or unlink? Unlinking modifies the original tree which is bad if we re-bind.
+            // But we parse fresh every bind, so unlinking is fine!
+            node.unlink()
+            dummyNode.appendChild(node)
+            
+            if (node == endNode) break
+            node = next
+        }
+        
+        val markdown = markwon?.render(dummyNode)
+        textView.text = markdown
+        llContainerItemHomeLeft.addView(textView)
+    }
+
+    private fun ItemHomeLeftBinding.addTableBlock(tableBlock: Node) {
+        val horizontalScrollView = HorizontalScrollView(root.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 16
+                bottomMargin = 16
+            }
+            isFillViewport = true // Important for ensuring content fills if smaller
+        }
+
+        val textView = MaterialTextView(root.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, // Allow growing
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setTextColor(Color.BLACK)
+            textSize = 16f
+            setPadding(0, 0, 0, 0)
+        }
+
+        val dummyNode = org.commonmark.node.Document()
+        tableBlock.unlink()
+        dummyNode.appendChild(tableBlock)
+
+        val markdown = markwon?.render(dummyNode)
+        textView.text = markdown
+        
+        horizontalScrollView.addView(textView)
+        llContainerItemHomeLeft.addView(horizontalScrollView)
+    }
+
 
     inner class CustomViewHolderUser(val binding: ItemHomeRightBinding) : RecyclerView.ViewHolder(binding.root)
     inner class CustomViewHolderAssistant(val binding: ItemHomeLeftBinding) : RecyclerView.ViewHolder(binding.root)

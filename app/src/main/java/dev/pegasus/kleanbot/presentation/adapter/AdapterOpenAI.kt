@@ -1,8 +1,11 @@
 package dev.pegasus.kleanbot.presentation.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.WebView
+import kotlin.math.abs
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -54,9 +57,37 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
         mtvRightTextItemHome.text = message.content
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun ItemHomeLeftBinding.bindViews(message: Message) {
         wvMessageItemHomeLeft.settings.javaScriptEnabled = false
         wvMessageItemHomeLeft.setBackgroundColor(0x00000000) // Transparent
+
+        // Handle Horizontal Scrolling
+        wvMessageItemHomeLeft.setOnTouchListener(object : android.view.View.OnTouchListener {
+            private var startX = 0f
+            private var startY = 0f
+
+            override fun onTouch(v: android.view.View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        startX = event.x
+                        startY = event.y
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = abs(event.x - startX)
+                        val dy = abs(event.y - startY)
+                        // If horizontal movement is significant and greater than vertical
+                        if (dx > 10 && dx > dy) {
+                            v.parent.requestDisallowInterceptTouchEvent(true)
+                        } else if (dy > dx) {
+                             v.parent.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                }
+                return false // Allow WebView to handle the event
+            }
+        })
 
         val document = parser.parse(message.content)
         val htmlBody = renderer.render(document)

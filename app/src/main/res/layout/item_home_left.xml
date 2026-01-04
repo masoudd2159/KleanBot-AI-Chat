@@ -1,16 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/mtvLeftTextItemHomeLeft"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
     android:layout_marginStart="16dp"
     android:layout_marginEnd="56dp"
-    android:layout_marginBottom="16dp"
     android:background="@drawable/bg_shape_rounded_corner_filled"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp"
-    android:textColor="@android:color/black"
-    android:textSize="16sp"
-    tools:maxLines="2"
-    tools:text="@tools:sample/lorem/random" />
+    android:fillViewport="true"
+    android:scrollbars="horizontal">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/mtvLeftTextItemHomeLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        tools:maxLines="2"
+        tools:text="@tools:sample/lorem/random" />
+
+</HorizontalScrollView>

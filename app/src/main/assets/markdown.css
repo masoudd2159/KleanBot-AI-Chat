@@ -6,56 +6,38 @@ body {
     margin: 0;
     padding: 0;
     background-color: transparent;
-    word-wrap: break-word;          /* legacy */
-    overflow-wrap: break-word;      /* modern */
+    word-wrap: break-word; /* Ensure text wraps */
+    overflow-wrap: break-word;
 }
 
-/* 
-   Table Layout Strategy:
-   - Use display: block to make the table element itself a block container.
-   - Use overflow-x: auto to enable horizontal scrolling on the table element.
-   - Use white-space: nowrap on cells to force columns to respect content width, triggering overflow if needed.
-   - This prevents the "whole page scroll" issue and keeps the table constrained to the view width.
-*/
-table {
+/* Wrapper handling the scroll */
+.table-wrapper {
     display: block;
     width: 100%;
     overflow-x: auto;
-    border-collapse: collapse;
     margin-bottom: 16px;
     border: 1px solid #D0D0D0;
     border-radius: 8px;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS/Android WebViews */
 }
-
-thead, tbody {
-    display: table; /* Make them behave like tables inside the block */
-    width: 100%; /* Stretch to fill */
-}
-
-/* Actually, display:block on table usually breaks the inner parts unless we are careful. 
-   Simpler approach that works in WebViews: 
-   table { display: block; overflow-x: auto; white-space: nowrap; }
-   and let the browser handle the rest.
-*/
 
 table {
-    display: block;
     width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
+    border-collapse: collapse;
+    /* No display: block here, let standard table layout work */
 }
 
 th, td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #E0E0E0;
-    border-right: 1px solid #E0E0E0;
+    /* Prevent cells from wrapping to force horizontal scroll if content is wide */
+    white-space: nowrap; 
 }
 
-th:last-child, td:last-child {
-    border-right: none;
-}
+/* Optional: If you want text inside cells to wrap if it's super long but table still wide, 
+   remove white-space: nowrap. But user asked for table to scroll if it overflows. 
+   Keeping nowrap is safer for data tables. */
 
 th {
     background-color: #F7F7F8;
@@ -71,7 +53,7 @@ pre {
     background-color: #F0F0F0;
     padding: 16px;
     border-radius: 8px;
-    overflow-x: auto; /* Code blocks should scoll too */
+    overflow-x: auto;
     margin-bottom: 16px;
 }
 

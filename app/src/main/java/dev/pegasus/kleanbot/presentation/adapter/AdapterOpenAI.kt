@@ -60,6 +60,8 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
 
         val document = parser.parse(message.content)
         val htmlBody = renderer.render(document)
+            .replace("<table>", "<div class=\"table-wrapper\"><table>")
+            .replace("</table>", "</table></div>")
 
         val fullHtml = """
             <!DOCTYPE html>

@@ -12,11 +12,10 @@ import dev.pegasus.kleanbot.presentation.enums.OpenAIRole
 import dev.pegasus.kleanbot.utilities.TypeWriter
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
-import io.noties.markwon.ext.tables.TableBlock
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.ext.tasklist.TaskListPlugin
+import org.commonmark.ext.gfm.tables.TableBlock
 import org.commonmark.node.Node
-import org.commonmark.node.Visitor
 import android.widget.LinearLayout
 import android.widget.HorizontalScrollView
 import com.google.android.material.textview.MaterialTextView
@@ -69,33 +68,8 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
         llContainerItemHomeLeft.removeAllViews()
         val node = markwon?.parse(message.content) ?: return
 
-        val blocks = ArrayList<Node>()
         var currentBlockStart: Node? = null
-        var currentBlockEnd: Node? = null
 
-        val visitor = object : Visitor {
-             override fun visit(node: Node) {
-                if (node is TableBlock) {
-                    // Flush previous text block if exists
-                    if (currentBlockStart != null) {
-                         addTextBlock(currentBlockStart, node.previous)
-                         currentBlockStart = null
-                         currentBlockEnd = null
-                    }
-                    // Add table block
-                    addTableBlock(node)
-                } else {
-                    if (currentBlockStart == null) {
-                        currentBlockStart = node
-                    }
-                    currentBlockEnd = node
-                    // Visit children to find nested tables?
-                    // Markwon TableBlock is usually top-level block.
-                    // If we don't visit children, we might miss nested stuff, but flat list is safer for now.
-                }
-            }
-        }
-        
         // Iterating top level nodes manually to avoid deep recursion issues or missing siblings
         var child = node.firstChild
         while (child != null) {

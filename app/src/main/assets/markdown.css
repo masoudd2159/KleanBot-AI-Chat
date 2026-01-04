@@ -1,0 +1,87 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #000000;
+    background-color: transparent;
+    margin: 0;
+    padding: 0;
+}
+
+/* Tables */
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid #D0D0D0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 400px; /* Ensure table has width to scroll */
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+th {
+    background-color: #F7F7F8;
+    font-weight: 600;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Code Blocks */
+pre {
+    background-color: #F0F0F0;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    background-color: #F0F0F0;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+pre code {
+    background-color: transparent; /* inherited from pre */
+    padding: 0;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+p {
+    margin-bottom: 16px;
+}
+
+ul, ol {
+    margin-bottom: 16px;
+    padding-left: 24px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+blockquote {
+    border-left: 4px solid #D0D0D0;
+    margin: 0 0 16px 0;
+    padding-left: 16px;
+    color: #666666;
+}

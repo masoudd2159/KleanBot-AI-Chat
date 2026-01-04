@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Redesign Colors -->
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorSurface">#F7F7F8</color> <!-- Light gray for assistant bubbles if needed, or transparent -->
+    <color name="colorOnSurface">#000000</color>
+    <color name="colorSecondaryContainer">#E0E0E0</color> <!-- User bubble -->
+    <color name="colorTableBorder">#D0D0D0</color>
+    <color name="colorCodeBackground">#F0F0F0</color>
 </resources>

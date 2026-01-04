@@ -2,6 +2,7 @@ package dev.pegasus.kleanbot.presentation.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.webkit.WebView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -9,17 +10,10 @@ import dev.pegasus.kleanbot.data.entities.Message
 import dev.pegasus.kleanbot.databinding.ItemHomeLeftBinding
 import dev.pegasus.kleanbot.databinding.ItemHomeRightBinding
 import dev.pegasus.kleanbot.presentation.enums.OpenAIRole
-import dev.pegasus.kleanbot.utilities.TypeWriter
-import io.noties.markwon.Markwon
-import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
-import io.noties.markwon.ext.tables.TablePlugin
-import io.noties.markwon.ext.tasklist.TaskListPlugin
-import org.commonmark.ext.gfm.tables.TableBlock
-import org.commonmark.node.Node
-import android.widget.LinearLayout
-import android.widget.HorizontalScrollView
-import com.google.android.material.textview.MaterialTextView
-import android.graphics.Color
+import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
+import java.util.Collections
 
 /**
  * Created by: Sohaib Ahmed
@@ -32,18 +26,14 @@ import android.graphics.Color
 
 class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
 
-    private var markwon: Markwon? = null
-
-    private val typedContentList = arrayListOf<String>()
+    private val parser = Parser.builder()
+        .extensions(Collections.singletonList(TablesExtension.create()))
+        .build()
+    private val renderer = HtmlRenderer.builder()
+        .extensions(Collections.singletonList(TablesExtension.create()))
+        .build()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        if (markwon == null) {
-            markwon = Markwon.builder(parent.context)
-                .usePlugin(TablePlugin.create(parent.context))
-                .usePlugin(StrikethroughPlugin.create())
-                .usePlugin(TaskListPlugin.create(parent.context))
-                .build()
-        }
         val layoutInflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             1 -> CustomViewHolderUser(ItemHomeRightBinding.inflate(layoutInflater, parent, false))
@@ -65,100 +55,27 @@ class AdapterOpenAI : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback
     }
 
     private fun ItemHomeLeftBinding.bindViews(message: Message) {
-        llContainerItemHomeLeft.removeAllViews()
-        val node = markwon?.parse(message.content) ?: return
+        wvMessageItemHomeLeft.settings.javaScriptEnabled = false
+        wvMessageItemHomeLeft.setBackgroundColor(0x00000000) // Transparent
 
-        var currentBlockStart: Node? = null
+        val document = parser.parse(message.content)
+        val htmlBody = renderer.render(document)
 
-        // Iterating top level nodes manually to avoid deep recursion issues or missing siblings
-        var child = node.firstChild
-        while (child != null) {
-            val next = child.next
-            if (child is TableBlock) {
-                if (currentBlockStart != null) {
-                    addTextBlock(currentBlockStart, child.previous)
-                    currentBlockStart = null
-                }
-                addTableBlock(child)
-            } else {
-                if (currentBlockStart == null) {
-                    currentBlockStart = child
-                }
-            }
-            child = next
-        }
-        if (currentBlockStart != null) {
-            addTextBlock(currentBlockStart, node.lastChild)
-        }
+        val fullHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <link rel="stylesheet" type="text/css" href="markdown.css">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+            </head>
+            <body>
+                $htmlBody
+            </body>
+            </html>
+        """.trimIndent()
+
+        wvMessageItemHomeLeft.loadDataWithBaseURL("file:///android_asset/", fullHtml, "text/html", "UTF-8", null)
     }
-
-    private fun ItemHomeLeftBinding.addTextBlock(startNode: Node?, endNode: Node?) {
-        if (startNode == null) return
-        val textView = MaterialTextView(root.context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setTextColor(Color.BLACK)
-            textSize = 16f
-            setPadding(0, 0, 0, 0)
-        }
-        
-        // Render the range of nodes.
-        // Since we cannot easily render a range, we can render node by node and append?
-        // Or create a dummy node.
-        
-        val dummyNode = org.commonmark.node.Document()
-        var node = startNode
-        while (node != null) {
-            val next = node.next
-            // We need to clone or unlink? Unlinking modifies the original tree which is bad if we re-bind.
-            // But we parse fresh every bind, so unlinking is fine!
-            node.unlink()
-            dummyNode.appendChild(node)
-            
-            if (node == endNode) break
-            node = next
-        }
-        
-        val markdown = markwon?.render(dummyNode)
-        textView.text = markdown
-        llContainerItemHomeLeft.addView(textView)
-    }
-
-    private fun ItemHomeLeftBinding.addTableBlock(tableBlock: Node) {
-        val horizontalScrollView = HorizontalScrollView(root.context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = 16
-                bottomMargin = 16
-            }
-            isFillViewport = true // Important for ensuring content fills if smaller
-        }
-
-        val textView = MaterialTextView(root.context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, // Allow growing
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setTextColor(Color.BLACK)
-            textSize = 16f
-            setPadding(0, 0, 0, 0)
-        }
-
-        val dummyNode = org.commonmark.node.Document()
-        tableBlock.unlink()
-        dummyNode.appendChild(tableBlock)
-
-        val markdown = markwon?.render(dummyNode)
-        textView.text = markdown
-        
-        horizontalScrollView.addView(textView)
-        llContainerItemHomeLeft.addView(horizontalScrollView)
-    }
-
 
     inner class CustomViewHolderUser(val binding: ItemHomeRightBinding) : RecyclerView.ViewHolder(binding.root)
     inner class CustomViewHolderAssistant(val binding: ItemHomeLeftBinding) : RecyclerView.ViewHolder(binding.root)

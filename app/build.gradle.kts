@@ -49,9 +49,7 @@ dependencies {
     implementation(libs.converter.scalars)
     implementation(libs.logging.interceptor)
 
-    // Markwon
-    implementation(libs.markwon.core)
-    implementation(libs.markwon.ext.tables)
-    implementation(libs.markwon.ext.strikethrough)
-    implementation(libs.markwon.ext.tasklist)
+    // Commonmark
+    implementation(libs.commonmark)
+    implementation(libs.commonmark.tables)
 }
